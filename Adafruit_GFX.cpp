@@ -1753,25 +1753,13 @@ const uint8_t PROGMEM GFXcanvas1::GFXclrBit[] = {0x7F, 0xBF, 0xDF, 0xEF,
 /**************************************************************************/
 /*!
    @brief    Instatiate a GFX 1-bit canvas context for graphics
-   @param    w   Display width, in pixels
-   @param    h   Display height, in pixels
+   @param    w      Display width, in pixels
+   @param    h      Display height, in pixels
+   @param    buffer A non owned buffer with minimal length: ((w + 7) / 8) * h
 */
 /**************************************************************************/
-GFXcanvas1::GFXcanvas1(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-  uint16_t bytes = ((w + 7) / 8) * h;
-  if ((buffer = (uint8_t *)malloc(bytes))) {
-    memset(buffer, 0, bytes);
-  }
-}
-
-/**************************************************************************/
-/*!
-   @brief    Delete the canvas, free memory
-*/
-/**************************************************************************/
-GFXcanvas1::~GFXcanvas1(void) {
-  if (buffer)
-    free(buffer);
+GFXcanvas1view::GFXcanvas1view(uint16_t w, uint16_t h, uint8_t* buffer)
+  : Adafruit_GFX(w, h), buffer(buffer) {
 }
 
 /**************************************************************************/
@@ -1782,7 +1770,7 @@ GFXcanvas1::~GFXcanvas1(void) {
     @param  color Binary (on or off) color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawPixel(int16_t x, int16_t y, uint16_t color) {
+void GFXcanvas1view::drawPixel(int16_t x, int16_t y, uint16_t color) {
   if (buffer) {
     if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
       return;
@@ -1829,7 +1817,7 @@ void GFXcanvas1::drawPixel(int16_t x, int16_t y, uint16_t color) {
    (off)
 */
 /**********************************************************************/
-bool GFXcanvas1::getPixel(int16_t x, int16_t y) const {
+bool GFXcanvas1view::getPixel(int16_t x, int16_t y) const {
   int16_t t;
   switch (rotation) {
   case 1:
@@ -1861,7 +1849,7 @@ bool GFXcanvas1::getPixel(int16_t x, int16_t y) const {
    (off)
 */
 /**********************************************************************/
-bool GFXcanvas1::getRawPixel(int16_t x, int16_t y) const {
+bool GFXcanvas1view::getRawPixel(int16_t x, int16_t y) const {
   if ((x < 0) || (y < 0) || (x >= WIDTH) || (y >= HEIGHT))
     return 0;
   if (this->getBuffer()) {
@@ -1883,7 +1871,7 @@ bool GFXcanvas1::getRawPixel(int16_t x, int16_t y) const {
     @param  color Binary (on or off) color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::fillScreen(uint16_t color) {
+void GFXcanvas1view::fillScreen(uint16_t color) {
   if (buffer) {
     uint16_t bytes = ((WIDTH + 7) / 8) * HEIGHT;
     memset(buffer, color ? 0xFF : 0x00, bytes);
@@ -1899,8 +1887,8 @@ void GFXcanvas1::fillScreen(uint16_t color) {
    @param  color  Color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawFastVLine(int16_t x, int16_t y, int16_t h,
-                               uint16_t color) {
+void GFXcanvas1view::drawFastVLine(int16_t x, int16_t y, int16_t h,
+                                   uint16_t color) {
 
   if (h < 0) { // Convert negative heights to positive equivalent
     h *= -1;
@@ -1955,8 +1943,8 @@ void GFXcanvas1::drawFastVLine(int16_t x, int16_t y, int16_t h,
    @param  color  Color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawFastHLine(int16_t x, int16_t y, int16_t w,
-                               uint16_t color) {
+void GFXcanvas1view::drawFastHLine(int16_t x, int16_t y, int16_t w,
+                                   uint16_t color) {
   if (w < 0) { // Convert negative widths to positive equivalent
     w *= -1;
     x -= w - 1;
@@ -2010,8 +1998,8 @@ void GFXcanvas1::drawFastHLine(int16_t x, int16_t y, int16_t w,
    @param    color   Binary (on or off) color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
-                                  uint16_t color) {
+void GFXcanvas1view::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
+                                      uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   int16_t row_bytes = ((WIDTH + 7) / 8);
   uint8_t *buffer = this->getBuffer();
@@ -2049,8 +2037,8 @@ void GFXcanvas1::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
    @param    color   Binary (on or off) color to fill with
 */
 /**************************************************************************/
-void GFXcanvas1::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
-                                  uint16_t color) {
+void GFXcanvas1view::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
+                                      uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   int16_t rowBytes = ((WIDTH + 7) / 8);
   uint8_t *buffer = this->getBuffer();
@@ -2108,15 +2096,15 @@ void GFXcanvas1::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
 
 /**************************************************************************/
 /*!
-   @brief    Instatiate a GFX 8-bit canvas context for graphics
+   @brief    Instatiate a GFX 1-bit canvas context for graphics
    @param    w   Display width, in pixels
    @param    h   Display height, in pixels
 */
 /**************************************************************************/
-GFXcanvas8::GFXcanvas8(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-  uint32_t bytes = w * h;
-  if ((buffer = (uint8_t *)malloc(bytes))) {
-    memset(buffer, 0, bytes);
+GFXcanvas1::GFXcanvas1(uint16_t w, uint16_t h)
+  : GFXcanvas1view(w, h, (uint8_t *)malloc(((w + 7) / 8) * h)) {
+  if (getBuffer()) {
+    memset(getBuffer(), 0, ((w + 7) / 8) * h);
   }
 }
 
@@ -2125,9 +2113,21 @@ GFXcanvas8::GFXcanvas8(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
    @brief    Delete the canvas, free memory
 */
 /**************************************************************************/
-GFXcanvas8::~GFXcanvas8(void) {
-  if (buffer)
-    free(buffer);
+GFXcanvas1::~GFXcanvas1(void) {
+  if (getBuffer())
+    free(getBuffer());
+}
+
+/**************************************************************************/
+/*!
+   @brief    Instatiate a GFX 8-bit canvas context for graphics
+   @param    w      Display width, in pixels
+   @param    h      Display height, in pixels
+   @param    buffer A non owned buffer with minimal length: w * h
+*/
+/**************************************************************************/
+GFXcanvas8view::GFXcanvas8view(uint16_t w, uint16_t h, uint8_t* buffer)
+  : Adafruit_GFX(w, h), buffer(buffer) {
 }
 
 /**************************************************************************/
@@ -2138,7 +2138,7 @@ GFXcanvas8::~GFXcanvas8(void) {
     @param  color 8-bit Color to fill with. Only lower byte of uint16_t is used.
 */
 /**************************************************************************/
-void GFXcanvas8::drawPixel(int16_t x, int16_t y, uint16_t color) {
+void GFXcanvas8view::drawPixel(int16_t x, int16_t y, uint16_t color) {
   if (buffer) {
     if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
       return;
@@ -2173,7 +2173,7 @@ void GFXcanvas8::drawPixel(int16_t x, int16_t y, uint16_t color) {
         @returns  The desired pixel's 8-bit color value
 */
 /**********************************************************************/
-uint8_t GFXcanvas8::getPixel(int16_t x, int16_t y) const {
+uint8_t GFXcanvas8view::getPixel(int16_t x, int16_t y) const {
   int16_t t;
   switch (rotation) {
   case 1:
@@ -2204,7 +2204,7 @@ uint8_t GFXcanvas8::getPixel(int16_t x, int16_t y) const {
         @returns  The desired pixel's 8-bit color value
 */
 /**********************************************************************/
-uint8_t GFXcanvas8::getRawPixel(int16_t x, int16_t y) const {
+uint8_t GFXcanvas8view::getRawPixel(int16_t x, int16_t y) const {
   if ((x < 0) || (y < 0) || (x >= WIDTH) || (y >= HEIGHT))
     return 0;
   if (buffer) {
@@ -2219,7 +2219,7 @@ uint8_t GFXcanvas8::getRawPixel(int16_t x, int16_t y) const {
     @param  color 8-bit Color to fill with. Only lower byte of uint16_t is used.
 */
 /**************************************************************************/
-void GFXcanvas8::fillScreen(uint16_t color) {
+void GFXcanvas8view::fillScreen(uint16_t color) {
   if (buffer) {
     memset(buffer, color, WIDTH * HEIGHT);
   }
@@ -2235,8 +2235,8 @@ void GFXcanvas8::fillScreen(uint16_t color) {
                   used.
 */
 /**************************************************************************/
-void GFXcanvas8::drawFastVLine(int16_t x, int16_t y, int16_t h,
-                               uint16_t color) {
+void GFXcanvas8view::drawFastVLine(int16_t x, int16_t y, int16_t h,
+                                   uint16_t color) {
   if (h < 0) { // Convert negative heights to positive equivalent
     h *= -1;
     y -= h - 1;
@@ -2291,8 +2291,8 @@ void GFXcanvas8::drawFastVLine(int16_t x, int16_t y, int16_t h,
                   used.
 */
 /**************************************************************************/
-void GFXcanvas8::drawFastHLine(int16_t x, int16_t y, int16_t w,
-                               uint16_t color) {
+void GFXcanvas8view::drawFastHLine(int16_t x, int16_t y, int16_t w,
+                                   uint16_t color) {
 
   if (w < 0) { // Convert negative widths to positive equivalent
     w *= -1;
@@ -2348,8 +2348,8 @@ void GFXcanvas8::drawFastHLine(int16_t x, int16_t y, int16_t w,
    used.
 */
 /**************************************************************************/
-void GFXcanvas8::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
-                                  uint16_t color) {
+void GFXcanvas8view::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
+                                      uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   uint8_t *buffer_ptr = buffer + y * WIDTH + x;
   for (int16_t i = 0; i < h; i++) {
@@ -2368,7 +2368,7 @@ void GFXcanvas8::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
    used.
 */
 /**************************************************************************/
-void GFXcanvas8::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
+void GFXcanvas8view::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
                                   uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   memset(buffer + y * WIDTH + x, color, w);
@@ -2376,15 +2376,15 @@ void GFXcanvas8::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
 
 /**************************************************************************/
 /*!
-   @brief    Instatiate a GFX 16-bit canvas context for graphics
+   @brief    Instatiate a GFX 8-bit canvas context for graphics
    @param    w   Display width, in pixels
    @param    h   Display height, in pixels
 */
 /**************************************************************************/
-GFXcanvas16::GFXcanvas16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
-  uint32_t bytes = w * h * 2;
-  if ((buffer = (uint16_t *)malloc(bytes))) {
-    memset(buffer, 0, bytes);
+GFXcanvas8::GFXcanvas8(uint16_t w, uint16_t h)
+  : GFXcanvas8view(w, h, (uint8_t *)malloc(w * h)) {
+  if (getBuffer()) {
+    memset(getBuffer(), 0, w * h);
   }
 }
 
@@ -2393,9 +2393,21 @@ GFXcanvas16::GFXcanvas16(uint16_t w, uint16_t h) : Adafruit_GFX(w, h) {
    @brief    Delete the canvas, free memory
 */
 /**************************************************************************/
-GFXcanvas16::~GFXcanvas16(void) {
-  if (buffer)
-    free(buffer);
+GFXcanvas8::~GFXcanvas8(void) {
+  if (getBuffer())
+    free(getBuffer());
+}
+
+/**************************************************************************/
+/*!
+   @brief    Instatiate a GFX 16-bit canvas context for graphics
+   @param    w      Display width, in pixels
+   @param    h      Display height, in pixels
+   @param    buffer A non owned buffer with minimal length: w * h
+*/
+/**************************************************************************/
+GFXcanvas16view::GFXcanvas16view(uint16_t w, uint16_t h, uint16_t* buffer)
+  : Adafruit_GFX(w, h), buffer(buffer) {
 }
 
 /**************************************************************************/
@@ -2406,7 +2418,7 @@ GFXcanvas16::~GFXcanvas16(void) {
     @param  color 16-bit 5-6-5 Color to fill with
 */
 /**************************************************************************/
-void GFXcanvas16::drawPixel(int16_t x, int16_t y, uint16_t color) {
+void GFXcanvas16view::drawPixel(int16_t x, int16_t y, uint16_t color) {
   if (buffer) {
     if ((x < 0) || (y < 0) || (x >= _width) || (y >= _height))
       return;
@@ -2441,7 +2453,7 @@ void GFXcanvas16::drawPixel(int16_t x, int16_t y, uint16_t color) {
         @returns  The desired pixel's 16-bit 5-6-5 color value
 */
 /**********************************************************************/
-uint16_t GFXcanvas16::getPixel(int16_t x, int16_t y) const {
+uint16_t GFXcanvas16view::getPixel(int16_t x, int16_t y) const {
   int16_t t;
   switch (rotation) {
   case 1:
@@ -2472,7 +2484,7 @@ uint16_t GFXcanvas16::getPixel(int16_t x, int16_t y) const {
         @returns  The desired pixel's 16-bit 5-6-5 color value
 */
 /**********************************************************************/
-uint16_t GFXcanvas16::getRawPixel(int16_t x, int16_t y) const {
+uint16_t GFXcanvas16view::getRawPixel(int16_t x, int16_t y) const {
   if ((x < 0) || (y < 0) || (x >= WIDTH) || (y >= HEIGHT))
     return 0;
   if (buffer) {
@@ -2487,7 +2499,7 @@ uint16_t GFXcanvas16::getRawPixel(int16_t x, int16_t y) const {
     @param  color 16-bit 5-6-5 Color to fill with
 */
 /**************************************************************************/
-void GFXcanvas16::fillScreen(uint16_t color) {
+void GFXcanvas16view::fillScreen(uint16_t color) {
   if (buffer) {
     uint8_t hi = color >> 8, lo = color & 0xFF;
     if (hi == lo) {
@@ -2513,7 +2525,7 @@ void GFXcanvas16::fillScreen(uint16_t color) {
             SPECIFIC endian-ness, it just flips the bytes within each word.
 */
 /**************************************************************************/
-void GFXcanvas16::byteSwap(void) {
+void GFXcanvas16view::byteSwap(void) {
   if (buffer) {
     uint32_t i, pixels = WIDTH * HEIGHT;
     for (i = 0; i < pixels; i++)
@@ -2530,8 +2542,8 @@ void GFXcanvas16::byteSwap(void) {
    @param    color   color 16-bit 5-6-5 Color to draw line with
 */
 /**************************************************************************/
-void GFXcanvas16::drawFastVLine(int16_t x, int16_t y, int16_t h,
-                                uint16_t color) {
+void GFXcanvas16view::drawFastVLine(int16_t x, int16_t y, int16_t h,
+                                    uint16_t color) {
   if (h < 0) { // Convert negative heights to positive equivalent
     h *= -1;
     y -= h - 1;
@@ -2585,8 +2597,8 @@ void GFXcanvas16::drawFastVLine(int16_t x, int16_t y, int16_t h,
    @param  color  Color 16-bit 5-6-5 Color to draw line with
 */
 /**************************************************************************/
-void GFXcanvas16::drawFastHLine(int16_t x, int16_t y, int16_t w,
-                                uint16_t color) {
+void GFXcanvas16view::drawFastHLine(int16_t x, int16_t y, int16_t w,
+                                    uint16_t color) {
   if (w < 0) { // Convert negative widths to positive equivalent
     w *= -1;
     x -= w - 1;
@@ -2640,8 +2652,8 @@ void GFXcanvas16::drawFastHLine(int16_t x, int16_t y, int16_t w,
    @param    color   color 16-bit 5-6-5 Color to draw line with
 */
 /**************************************************************************/
-void GFXcanvas16::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
-                                   uint16_t color) {
+void GFXcanvas16view::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
+                                       uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   uint16_t *buffer_ptr = buffer + y * WIDTH + x;
   for (int16_t i = 0; i < h; i++) {
@@ -2659,11 +2671,35 @@ void GFXcanvas16::drawFastRawVLine(int16_t x, int16_t y, int16_t h,
    @param    color   color 16-bit 5-6-5 Color to draw line with
 */
 /**************************************************************************/
-void GFXcanvas16::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
-                                   uint16_t color) {
+void GFXcanvas16view::drawFastRawHLine(int16_t x, int16_t y, int16_t w,
+                                       uint16_t color) {
   // x & y already in raw (rotation 0) coordinates, no need to transform.
   uint32_t buffer_index = y * WIDTH + x;
   for (uint32_t i = buffer_index; i < buffer_index + w; i++) {
     buffer[i] = color;
   }
+}
+
+/**************************************************************************/
+/*!
+   @brief    Instatiate a GFX 16-bit canvas context for graphics
+   @param    w   Display width, in pixels
+   @param    h   Display height, in pixels
+*/
+/**************************************************************************/
+GFXcanvas16::GFXcanvas16(uint16_t w, uint16_t h)
+  : GFXcanvas16view(w, h, (uint16_t *)malloc(w * h * 2)) {
+  if (getBuffer()) {
+    memset(getBuffer(), 0, w * h * 2);
+  }
+}
+
+/**************************************************************************/
+/*!
+   @brief    Delete the canvas, free memory
+*/
+/**************************************************************************/
+GFXcanvas16::~GFXcanvas16(void) {
+  if (getBuffer())
+    free(getBuffer());
 }

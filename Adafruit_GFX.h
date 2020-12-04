@@ -304,10 +304,10 @@ private:
 };
 
 /// A GFX 1-bit canvas context for graphics
-class GFXcanvas1 : public Adafruit_GFX {
+class GFXcanvas1view : public Adafruit_GFX {
 public:
-  GFXcanvas1(uint16_t w, uint16_t h);
-  ~GFXcanvas1(void);
+  GFXcanvas1view(uint16_t w, uint16_t h, uint8_t *buffer);
+
   void drawPixel(int16_t x, int16_t y, uint16_t color);
   void fillScreen(uint16_t color);
   void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
@@ -335,11 +335,18 @@ private:
 #endif
 };
 
-/// A GFX 8-bit canvas context for graphics
-class GFXcanvas8 : public Adafruit_GFX {
+/// A memory owning GFX 1-bit canvas context for graphics
+class GFXcanvas1 : public GFXcanvas1view {
 public:
-  GFXcanvas8(uint16_t w, uint16_t h);
-  ~GFXcanvas8(void);
+  GFXcanvas1(uint16_t w, uint16_t h);
+  ~GFXcanvas1(void);
+};
+
+/// A GFX 8-bit canvas context for graphics
+class GFXcanvas8view : public Adafruit_GFX {
+public:
+  GFXcanvas8view(uint16_t w, uint16_t h, uint8_t *buffer);
+
   void drawPixel(int16_t x, int16_t y, uint16_t color);
   void fillScreen(uint16_t color);
   void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
@@ -362,11 +369,18 @@ private:
   uint8_t *buffer;
 };
 
-///  A GFX 16-bit canvas context for graphics
-class GFXcanvas16 : public Adafruit_GFX {
+/// A memory owning GFX 8-bit canvas context for graphics
+class GFXcanvas8 : public GFXcanvas8view {
 public:
-  GFXcanvas16(uint16_t w, uint16_t h);
-  ~GFXcanvas16(void);
+  GFXcanvas8(uint16_t w, uint16_t h);
+  ~GFXcanvas8(void);
+};
+
+/// A GFX 16-bit canvas context for graphics
+class GFXcanvas16view : public Adafruit_GFX {
+public:
+  GFXcanvas16view(uint16_t w, uint16_t h, uint16_t *buffer);
+
   void drawPixel(int16_t x, int16_t y, uint16_t color);
   void fillScreen(uint16_t color);
   void byteSwap(void);
@@ -388,6 +402,13 @@ protected:
 
 private:
   uint16_t *buffer;
+};
+
+/// A memory owning GFX 16-bit canvas context for graphics
+class GFXcanvas16 : public GFXcanvas16view {
+public:
+  GFXcanvas16(uint16_t w, uint16_t h);
+  ~GFXcanvas16(void);
 };
 
 #endif // _ADAFRUIT_GFX_H
